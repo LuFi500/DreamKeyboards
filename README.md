@@ -1,2 +1,19 @@
-# DreamKeyboards
-Custom keyboard builder web shop so everyone can buy the perfect keyboard of their preference.
+# projekt
+
+## Project setup
+```
+npm install
+```
+
+### Compiles and hot-reloads for development
+```
+npm run serve
+```
+
+### Compiles and minifies for production
+```
+npm run build
+```
+
+### Customize configuration
+See [Configuration Reference](https://cli.vuejs.org/config/).
