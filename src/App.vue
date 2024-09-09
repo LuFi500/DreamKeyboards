@@ -9,19 +9,19 @@
       <div class="d-flex align-center">
         <v-img
           alt="Vuetify Logo"
-          class="shrink mr-2"
+          class="mr-2"
           contain
-          src="https://cdn.vuetifyjs.com/images/logos/vuetify-logo-dark.png"
+          :src="require('@/assets/keyboardlogo2.png')"
           transition="scale-transition"
-          width="40"
+          width="73"
         />
 
         <v-img
           alt="Vuetify Name"
-          class="shrink mt-1 hidden-sm-and-down"
+          class="mr-2"
           contain
-          min-width="100"
-          src="https://cdn.vuetifyjs.com/images/logos/vuetify-name-dark.png"
+          :src="require('@/assets/dreamtext2.png')"
+          transition="scale-transition"
           width="100"
         />
       </div>
@@ -29,23 +29,23 @@
       <v-spacer></v-spacer>
 
       <div class="nav-buttons">
-        <v-btn class="nav-btn" text>
+        <v-btn :disabled="this.$route.name === 'home'" class="nav-btn" text @click="goToHome">
           Home
         </v-btn>
 
-        <v-btn class="nav-btn" text>
+        <v-btn :disabled="this.$route.name === 'build'" class="nav-btn" text @click="goToBuild">
           Custom Keyboard
         </v-btn>
 
-        <v-btn class="nav-btn" text>
+        <v-btn :disabled="this.$route.name === 'login'" class="nav-btn" text @click="goToLogin">
           Login
         </v-btn>
 
-        <v-btn class="nav-btn" text>
+        <v-btn :disabled="this.$route.name === 'register'" class="nav-btn" text @click="goToRegister">
           Register
         </v-btn>
 
-        <v-btn class="nav-btn" text>
+        <v-btn :disabled="this.$route.name === 'profile'" class="nav-btn" text @click="goToProfile">
           Account Settings
         </v-btn>
       </div>
@@ -60,6 +60,23 @@
 <script>
 export default {
   name: 'App',
+  methods: {
+    goToHome() {
+      this.$router.push('/');
+    },
+    goToBuild() {
+      this.$router.push('/build');
+    },
+    goToLogin() {
+      this.$router.push('/login');
+    },
+    goToRegister() {
+      this.$router.push('/register');
+    },
+    goToProfile() {
+      this.$router.push('/profile');
+    }
+  }
 };
 </script>
 

@@ -7,6 +7,7 @@ import LogIn from '../views/LogIn.vue'; // Fix the filename to match your actual
 import Register from '../views/Register.vue';
 import Build from '../views/OdabirDijelova.vue';
 import { auth } from '@/router/firebase'; // Import Firebase authentication correctly
+import Profile from '../views/Profile.vue';
 
 Vue.use(VueRouter);
 
@@ -36,6 +37,12 @@ const routes = [
     name: 'build',
     component: Build,
   },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: Profile,
+  },
+  
 ];
 
 const router = new VueRouter({
