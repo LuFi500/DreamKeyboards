@@ -40,7 +40,7 @@ export default {
     camera.position.set(0, 1, 5);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth / 2, window.innerHeight); // Set renderer to half the screen
+    renderer.setSize(window.innerWidth / 1.4, window.innerHeight); // Set renderer to half the screen
     this.$refs.threeCanvas.appendChild(renderer.domElement);
 
     let keyboardModel;
@@ -65,13 +65,13 @@ export default {
       const center = box.getCenter(new THREE.Vector3());
 
       object.position.sub(center); // Move the object so its center is at (0, 0, 0)
-      object.scale.set(1.5, 1.5, 1.5); // Adjust size
+      object.scale.set(1.57, 1.5, 1.5); // Adjust size
 
       keyboardModel = object;
       scene.add(keyboardModel);
 
       // Set OrbitControls target to the center of the keyboard model
-      controls.target.copy(new THREE.Vector3(0, 0, 0)); // Center the controls on the model
+      controls.target.copy(new THREE.Vector3(-0.9, -0.5, -0.2)); // Center the controls on the model
     });
 
     // Add lighting
