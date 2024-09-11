@@ -3,7 +3,7 @@
     <v-navigation-drawer class="custom-drawer" permanent right>
       <!-- Layout Radio Group -->
       <v-card class="custom-card">
-        <v-radio-group v-model="radio1" label="Choose the layout" class="custom-label" style="padding-top: 20px;">
+        <v-radio-group v-model="radio1" label="Choose layout" class="custom-label" style="padding-top: 20px;">
           <v-radio label="60%" value="1" class="custom-option first-radio"></v-radio>
           <v-radio label="67%" value="2" class="custom-option"></v-radio>
         </v-radio-group>
@@ -12,30 +12,49 @@
       <!-- Case Material Radio Group -->
       <v-card class="custom-card">
         <v-radio-group v-model="radio2" label="Case material" class="custom-label" style="margin-top: -70px;">
-          <v-radio label="White Plastic" value="C" class="custom-option first-radio"></v-radio>
-          <v-radio label="Black Plastic" value="A" class="custom-option"></v-radio>
-          <v-radio label="Brushed Aluminum" value="B" class="custom-option"></v-radio>
-          <v-radio label="Brushed Brass" value="D" class="custom-option"></v-radio>
+          <v-radio label="White Plastic" value="white" class="custom-option first-radio"></v-radio>
+          <v-radio label="Black Plastic" value="black" class="custom-option"></v-radio>
+          <v-radio label="Brushed Aluminum" value="aluminum" class="custom-option"></v-radio>
+          <v-radio label="Brushed Brass" value="brass" class="custom-option"></v-radio>
         </v-radio-group>
       </v-card>
 
       <!-- Keycap Color Radio Group -->
       <v-card class="custom-card">
-        <v-radio-group v-model="radio2" label="Keycap color" class="custom-label" style="margin-top: -70px;">
-          <v-radio label="Black pbt" value="" class="custom-option first-radio"></v-radio>
-          <v-radio label="White pbt" value="" class="custom-option"></v-radio>
-          <v-radio label="Peach red pbt" value="" class="custom-option"></v-radio>
-          
+        <v-radio-group v-model="radioKeycap" label="Keycap color" class="custom-label" style="margin-top: -70px;">
+          <v-radio label="Black pbt" value="blackPbt" class="custom-option first-radio"></v-radio>
+          <v-radio label="White pbt" value="whitePbt" class="custom-option"></v-radio>
+          <v-radio label="Peach Red pbt" value="peachRed" class="custom-option"></v-radio>
         </v-radio-group>
       </v-card>
 
-      <!-- Keycap Color Radio Group -->
+      <!-- Switches Radio Group with Play Buttons -->
       <v-card class="custom-card">
-        <v-radio-group v-model="radio2" label="Switches" class="custom-label" style="margin-top: -70px;">
-          <v-radio label="XDA Bubble" value="" class="custom-option first-radio"></v-radio>
-          <v-radio label="Akko Cream Black Pro" value="" class="custom-option"></v-radio>
-          <v-radio label="AKKO Cream Yellw Pro" value="" class="custom-option"></v-radio>
-          <v-radio label="C3 Equals Banana Split" value="" class="custom-option"></v-radio>
+        <v-radio-group v-model="radioSwitches" label="Switches" class="custom-label" style="margin-top: -70px;">
+          <div class="switch-option d-flex justify-space-between align-center">
+            <v-radio label="Matcha Late" value="matchaLate" class="custom-option first-radio"></v-radio>
+            <v-btn   icon @click="playSound('matchaLatte')" class="play-button ">
+              <v-icon class="pt-5" color="white">mdi-play-circle</v-icon>
+            </v-btn>
+          </div>
+          <div class="switch-option">
+            <v-radio label="Boba U4T" value="boba" class="custom-option"></v-radio>
+            <v-btn icon @click="playSound('boba')" class="play-button">
+              <v-icon color="white">mdi-play-circle</v-icon>
+            </v-btn>
+          </div>
+          <div class="switch-option">
+            <v-radio label="Akko Cream Black" value="akkoBlack" class="custom-option"></v-radio>
+            <v-btn icon @click="playSound('akkoBlack')" class="play-button">
+              <v-icon color="white">mdi-play-circle</v-icon>
+            </v-btn>
+          </div>
+          <div class="switch-option">
+            <v-radio label="Akko Cream Yellow" value="akkoYellow" class="custom-option"></v-radio>
+            <v-btn icon @click="playSound('akkoYellow')" class="play-button">
+              <v-icon color="white">mdi-play-circle</v-icon>
+            </v-btn>
+          </div>
         </v-radio-group>
       </v-card>
 
@@ -46,6 +65,12 @@
     </v-navigation-drawer>
 
     <div ref="threeContainer" class="three-container"></div>
+
+    <!-- Audio elements for sound samples -->
+    <audio ref="matchaLatte" src="/Sounds/matchaLatte.wav"></audio>
+    <audio ref="boba" src="/Sounds/Boba.wav"></audio>
+    <audio ref="akkoBlack" src="/Sounds/akkoCreamBlack.wav"></audio>
+    <audio ref="akkoYellow" src="/Sounds/akkoCreamYellow.wav"></audio>
   </div>
 </template>
 
@@ -59,20 +84,30 @@ export default {
   data() {
     return {
       radio1: '1', // Default to 60% layout
-      radio2: 'B', // Default to Brushed Aluminum
+      radio2: 'aluminum', // Default to Brushed Aluminum for case material
+      radioKeycap: 'peachRed', // Track keycap color, default Peach Red
+      radioSwitches: 'matchaLate', // Default to Matcha Late switch
       object: null, // Reference to the 3D object
     };
   },
   watch: {
-    // Watch the radio2 value to change the texture based on case material selection
+    // Watch for changes in case material or keycap color
     radio2(newVal) {
-      this.updateTexture(newVal);
+      this.updateTexture(newVal, this.radioKeycap);
+    },
+    radioKeycap(newVal) {
+      this.updateTexture(this.radio2, newVal);
     }
   },
-  mounted() {
-    this.initThree();
-  },
   methods: {
+    // Method to play the corresponding sound
+    playSound(switchType) {
+      const audio = this.$refs[switchType];
+      if (audio) {
+        audio.currentTime = 0; // Reset audio to start
+        audio.play();
+      }
+    },
     initThree() {
       // Create the scene
       const scene = new THREE.Scene();
@@ -98,7 +133,7 @@ export default {
 
       // Remove any axis restrictions to allow full rotation
       controls.maxPolarAngle = Math.PI; // Allow full rotation vertically
-      controls.minPolarAngle = 0;       // Allow looking straight up
+      controls.minPolarAngle = 0; // Allow looking straight up
 
       // Add lights to the scene
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -117,9 +152,9 @@ export default {
           object.scale.set(3, 3, 3); // Adjust scale as necessary
           object.position.set(4.5, -1, 0); // Adjust position
           object.rotation.x = Math.PI / 2; // Adjust rotation if needed
-          
+
           this.object = object; // Store the object reference
-          this.updateTexture(this.radio2); // Apply the initial texture
+          this.updateTexture(this.radio2, this.radioKeycap); // Apply the initial texture
           scene.add(this.object);
 
           // Set the 67% layout option as checked
@@ -149,22 +184,41 @@ export default {
         renderer.setSize(window.innerWidth, window.innerHeight);
       });
     },
-    updateTexture(material) {
+    updateTexture(caseMaterial, keycap) {
       const textureLoader = new THREE.TextureLoader();
       let texturePath = '';
 
-      if (material === 'B') {
-        // Brushed Aluminum selected
-        texturePath = '/redAluminum1.png';
-      } else if (material === 'C') {
-        // Brushed Brass selected
-        texturePath = '/redWhite.png';
-      } else if (material === 'A') {
-        // Black Plastic selected
-        texturePath = '/redBlack.png';
-      } else if (material === 'D') {
-        // Brushed Brass selected
-        texturePath = '/redBrass1.png';
+      // Determine the texture based on the keycap color and case material
+      if (keycap === 'peachRed') {
+        if (caseMaterial === 'aluminum') {
+          texturePath = '/redAluminum1.png';
+        } else if (caseMaterial === 'white') {
+          texturePath = '/redWhite.png';
+        } else if (caseMaterial === 'black') {
+          texturePath = '/redBlack.png';
+        } else if (caseMaterial === 'brass') {
+          texturePath = '/redBrass1.png';
+        }
+      } else if (keycap === 'blackPbt') {
+        if (caseMaterial === 'aluminum') {
+          texturePath = '/blackAluminum1.png';
+        } else if (caseMaterial === 'white') {
+          texturePath = '/blackWhite.png';
+        } else if (caseMaterial === 'black') {
+          texturePath = '/blackBlack.png';
+        } else if (caseMaterial === 'brass') {
+          texturePath = '/blackBrass1.png';
+        }
+      } else if (keycap === 'whitePbt') {
+        if (caseMaterial === 'aluminum') {
+          texturePath = '/whiteAluminum1.png';
+        } else if (caseMaterial === 'white') {
+          texturePath = '/whiteWhite.png';
+        } else if (caseMaterial === 'black') {
+          texturePath = '/whiteBlack.png';
+        } else if (caseMaterial === 'brass') {
+          texturePath = '/whiteBrass1.png';
+        }
       }
 
       if (texturePath && this.object) {
@@ -180,6 +234,9 @@ export default {
         });
       }
     }
+  },
+  mounted() {
+    this.initThree();
   }
 };
 </script>
@@ -190,6 +247,25 @@ export default {
   height: 100vh;
   overflow: hidden;
   background-color: black; /* Set the three-container background to black */
+}
+
+.switch-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px; /* Adjust margin between switch options */
+}
+
+.play-button {
+  color: white; /* Make the button icon white */
+  cursor: pointer;
+ padding-top: 2px;
+  border-radius: 50%; /* Rounded play button */
+  
+}
+
+.play-button:hover {
+ 
 }
 
 @import url('https://fonts.cdnfonts.com/css/coolvetica-2');
@@ -218,7 +294,7 @@ export default {
   top: 0;
   height: 100%;
   border-left: 1px solid rgb(114, 114, 114);
-  padding: 45px;
+  padding: 40px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
