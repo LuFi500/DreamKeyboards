@@ -153,8 +153,8 @@ export default {
             userId: user.uid,
           });
 
-          // Redirect to the login page after registration
-          this.$router.push('/login');
+          // Redirect to the home page after successful registration
+          this.$router.push('/');
 
           alert('Registration successful!');
         } catch (error) {

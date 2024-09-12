@@ -33,7 +33,7 @@
         <v-radio-group v-model="radioSwitches" label="Switches" class="custom-label" style="margin-top: -70px;">
           <div class="switch-option d-flex justify-space-between align-center">
             <v-radio label="Matcha Late" value="matchaLate" class="custom-option first-radio"></v-radio>
-            <v-btn   icon @click="playSound('matchaLatte')" class="play-button ">
+            <v-btn icon @click="playSound('matchaLatte')" class="play-button">
               <v-icon class="pt-5" color="white">mdi-play-circle</v-icon>
             </v-btn>
           </div>
@@ -62,6 +62,16 @@
       <v-card class="custom-card">
         <v-checkbox v-model="checkbox1" label="Wireless connectivity" class="custom-option custom-checkbox" style="margin-top: -70px;"></v-checkbox>
       </v-card>
+
+      <!-- Checkout Button -->
+      <v-btn 
+        class="proceed-to-checkout-btn"
+        text
+        block
+        @click="goToCheckout"
+      >
+        Proceed to Checkout
+      </v-btn>
     </v-navigation-drawer>
 
     <div ref="threeContainer" class="three-container"></div>
@@ -76,66 +86,54 @@
 
 <script>
 import * as THREE from 'three';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'; // Import OBJLoader
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'; // Import OrbitControls
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'; 
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'; 
+import { auth } from '@/router/firebase'; 
 
 export default {
   name: 'ThreeScene',
   data() {
     return {
-      radio1: '1', // Default to 60% layout
-      radio2: 'aluminum', // Default to Brushed Aluminum for case material
-      radioKeycap: 'peachRed', // Track keycap color, default Peach Red
-      radioSwitches: 'matchaLate', // Default to Matcha Late switch
-      object: null, // Reference to the 3D object
+      radio1: '1', 
+      radio2: 'aluminum', 
+      radioKeycap: 'peachRed', 
+      radioSwitches: 'matchaLate', 
+      object: null,
+      currentPlayingAudio: null 
     };
   },
-  watch: {
-    // Watch for changes in case material or keycap color
-    radio2(newVal) {
-      this.updateTexture(newVal, this.radioKeycap);
-    },
-    radioKeycap(newVal) {
-      this.updateTexture(this.radio2, newVal);
-    }
-  },
   methods: {
-    // Method to play the corresponding sound
     playSound(switchType) {
       const audio = this.$refs[switchType];
       if (audio) {
-        audio.currentTime = 0; // Reset audio to start
+        if (this.currentPlayingAudio && this.currentPlayingAudio !== audio) {
+          this.currentPlayingAudio.pause();
+          this.currentPlayingAudio.currentTime = 0; 
+        }
+        this.currentPlayingAudio = audio;
         audio.play();
       }
     },
     initThree() {
-      // Create the scene
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x000000); // Set background color to black
+      scene.background = new THREE.Color(0x000000);
 
-      // Create a camera, move it further back to zoom out
       const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.set(0, 2, 7.5); // Adjusted to zoom out more
+      camera.position.set(0, 2, 7.5);
 
-      // Create a renderer
       const renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(window.innerWidth / 1.2, window.innerHeight);
+      renderer.setSize(window.innerWidth * 0.85, window.innerHeight); 
       this.$refs.threeContainer.appendChild(renderer.domElement);
 
-      // Add OrbitControls and enable full-axis rotation
       const controls = new OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true; // Adds smoothness to the controls
-      controls.dampingFactor = 0.25; // Damping factor for smooth controls
-      controls.screenSpacePanning = false; // Disable panning
-      controls.minDistance = 5; // Adjusted minimum zoom distance
-      controls.maxDistance = 20; // Adjusted maximum zoom distance
-      controls.enableZoom = true; // Enable zooming
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.25;
+      controls.minDistance = 5;
+      controls.maxDistance = 20;
+      controls.enableZoom = true;
+      controls.maxPolarAngle = Math.PI;
+      controls.minPolarAngle = 0;
 
-      // Remove any axis restrictions to allow full rotation
-      controls.maxPolarAngle = Math.PI; // Allow full rotation vertically
-      controls.minPolarAngle = 0; // Allow looking straight up
-
-      // Add lights to the scene
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
       scene.add(ambientLight);
 
@@ -143,22 +141,17 @@ export default {
       directionalLight.position.set(1, 1, 1).normalize();
       scene.add(directionalLight);
 
-      // Load the keyboard.obj model
       const objLoader = new OBJLoader();
       objLoader.load(
-        '/prava.obj', // Replace with the actual path to your .obj file
+        '/prava.obj',
         (object) => {
-          // Called when the .obj file is loaded successfully
-          object.scale.set(3, 3, 3); // Adjust scale as necessary
-          object.position.set(4.5, -1, 0); // Adjust position
-          object.rotation.x = Math.PI / 2; // Adjust rotation if needed
+          object.scale.set(3, 3, 3);
+          object.position.set(4.5, -1, 0);
+          object.rotation.x = Math.PI / 2;
 
-          this.object = object; // Store the object reference
-          this.updateTexture(this.radio2, this.radioKeycap); // Apply the initial texture
+          this.object = object;
+          this.updateTexture(this.radio2, this.radioKeycap);
           scene.add(this.object);
-
-          // Set the 67% layout option as checked
-          this.radio1 = '2';
         },
         (xhr) => {
           console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
@@ -168,71 +161,91 @@ export default {
         }
       );
 
-      // Animation loop
       const animate = () => {
         requestAnimationFrame(animate);
-        controls.update(); // Required for damping to work
+        controls.update();
         renderer.render(scene, camera);
       };
 
       animate();
 
-      // Handle window resize
       window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(window.innerWidth * 0.85, window.innerHeight);
       });
     },
     updateTexture(caseMaterial, keycap) {
       const textureLoader = new THREE.TextureLoader();
       let texturePath = '';
 
-      // Determine the texture based on the keycap color and case material
       if (keycap === 'peachRed') {
-        if (caseMaterial === 'aluminum') {
-          texturePath = '/redAluminum1.png';
-        } else if (caseMaterial === 'white') {
-          texturePath = '/redWhite.png';
-        } else if (caseMaterial === 'black') {
-          texturePath = '/redBlack.png';
-        } else if (caseMaterial === 'brass') {
-          texturePath = '/redBrass1.png';
-        }
+        texturePath = caseMaterial === 'aluminum' ? '/redAluminum1.png' :
+                      caseMaterial === 'white' ? '/redWhite.png' :
+                      caseMaterial === 'black' ? '/redBlack.png' :
+                      caseMaterial === 'brass' ? '/redBrass1.png' : '';
       } else if (keycap === 'blackPbt') {
-        if (caseMaterial === 'aluminum') {
-          texturePath = '/blackAluminum1.png';
-        } else if (caseMaterial === 'white') {
-          texturePath = '/blackWhite.png';
-        } else if (caseMaterial === 'black') {
-          texturePath = '/blackBlack.png';
-        } else if (caseMaterial === 'brass') {
-          texturePath = '/blackBrass1.png';
-        }
+        texturePath = caseMaterial === 'aluminum' ? '/blackAluminum1.png' :
+                      caseMaterial === 'white' ? '/blackWhite.png' :
+                      caseMaterial === 'black' ? '/blackBlack.png' :
+                      caseMaterial === 'brass' ? '/blackBrass1.png' : '';
       } else if (keycap === 'whitePbt') {
-        if (caseMaterial === 'aluminum') {
-          texturePath = '/whiteAluminum1.png';
-        } else if (caseMaterial === 'white') {
-          texturePath = '/whiteWhite.png';
-        } else if (caseMaterial === 'black') {
-          texturePath = '/whiteBlack.png';
-        } else if (caseMaterial === 'brass') {
-          texturePath = '/whiteBrass1.png';
-        }
+        texturePath = caseMaterial === 'aluminum' ? '/whiteAluminum1.png' :
+                      caseMaterial === 'white' ? '/whiteWhite.png' :
+                      caseMaterial === 'black' ? '/whiteBlack.png' :
+                      caseMaterial === 'brass' ? '/whiteBrass1.png' : '';
       }
 
       if (texturePath && this.object) {
-        // Load the new texture
-        textureLoader.load(texturePath, (texture) => {
-          // Apply the texture to all meshes in the object
-          this.object.traverse((child) => {
-            if (child instanceof THREE.Mesh) {
-              child.material.map = texture;
-              child.material.needsUpdate = true; // Ensure the material is updated
-            }
-          });
-        });
+        textureLoader.load(
+          texturePath,
+          (texture) => {
+            this.object.traverse((child) => {
+              if (child instanceof THREE.Mesh) {
+                child.material.map = texture;
+                child.material.needsUpdate = true;
+              }
+            });
+          },
+          undefined,
+          (error) => {
+            console.error('Error loading texture:', error); 
+          }
+        );
+      } else {
+        console.error('Texture path not found or object not loaded');
       }
+    },
+    goToCheckout() {
+      if (!auth.currentUser) {
+        this.$router.push('/login'); 
+        return;
+      }
+
+      let total = 0;
+      if (this.radio1 === '1') total += 40;
+      else if (this.radio1 === '2') total += 45;
+
+      if (this.radio2 === 'white' || this.radio2 === 'black') total += 20;
+      else if (this.radio2 === 'aluminum') total += 30;
+      else if (this.radio2 === 'brass') total += 40;
+
+      total += 20;
+
+      if (this.radioSwitches === 'matchaLate') total += 40;
+      else if (this.radioSwitches === 'boba') total += 50;
+      else if (this.radioSwitches === 'akkoBlack' || this.radioSwitches === 'akkoYellow') total += 30;
+
+      this.$router.push({
+        path: '/checkout',
+        query: {
+          layout: this.radio1,
+          caseMaterial: this.radio2,
+          keycapColor: this.radioKeycap,
+          switches: this.radioSwitches,
+          totalAmount: total,
+        },
+      });
     }
   },
   mounted() {
@@ -243,51 +256,41 @@ export default {
 
 <style scoped>
 .three-container {
-  width: 100%;
+  width: 85%;
   height: 100vh;
+  float: left;
   overflow: hidden;
-  background-color: black; /* Set the three-container background to black */
+  background-color: black;
 }
 
 .switch-option {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px; /* Adjust margin between switch options */
+  margin-bottom: 10px;
 }
 
 .play-button {
-  color: white; /* Make the button icon white */
+  color: white;
   cursor: pointer;
- padding-top: 2px;
-  border-radius: 50%; /* Rounded play button */
-  
+  padding-top: 2px;
+  border-radius: 50%;
 }
 
-.play-button:hover {
- 
+.proceed-to-checkout-btn {
+  background-color: black !important;
+  color: white !important;
+  border: 1px solid white !important;
+  transition: background-color 0.3s, color 0.3s;
 }
 
-@import url('https://fonts.cdnfonts.com/css/coolvetica-2');
-
-/* Spacing adjustment for first radio button in each group */
-.first-radio {
-  margin-top: 27px !important; /* Add extra margin between the header and the first radio button */
+.proceed-to-checkout-btn:hover {
+  background-color: #FF4191 !important;
+  color: white !important;
 }
 
-/* Customize v-checkbox border color */
-.custom-checkbox >>> .v-input__control {
-  border: 2px solid white !important;
-  border-radius: 4px; /* Add this if you want rounded corners */
-}
-
-.custom-checkbox >>> .v-input--selection-controls__ripple {
-  border-color: white !important;
-}
-
-/* Entire drawer styling */
 .custom-drawer {
-  background-color: black; /* Change the drawer background color to black */
+  background-color: black;
   width: 15% !important;
   position: fixed;
   right: 0;
@@ -300,14 +303,14 @@ export default {
   justify-content: flex-start;
 }
 
-/* Card styling */
 .custom-card {
   background-color: transparent;
-  border: none; /* Remove the border from cards */
-  margin-top: 80px; /* Adjust this value to move the cards lower */
+  border: none;
+  margin-top: 80px;
 }
 
-/* Label styling */
+@import url('https://fonts.cdnfonts.com/css/coolvetica-2');
+
 .custom-label >>> .v-label,
 .custom-label /deep/ .v-label {
   font-family: 'Coolvetica', sans-serif;
@@ -315,36 +318,31 @@ export default {
   color: white;
 }
 
-/* Option styling */
 .custom-option >>> .v-label,
 .custom-option /deep/ .v-label {
   font-family: 'Coolvetica', sans-serif;
   font-size: 18px !important;
   color: white;
-  cursor: pointer; /* Show pointer cursor to indicate clickability */
-  transition: color 0.3s; /* Smooth color transition */
+  cursor: pointer;
+  transition: color 0.3s;
 }
 
-/* Hover effect for radio options */
-.custom-option:hover >>> .v-label,
-.custom-option:hover /deep/ .v-label {
-  color: #FF4191; /* Change color on hover */
+.custom-checkbox >>> .v-input__control {
+  border: 2px solid white !important;
+  border-radius: 4px;
 }
 
-/* Checkbox styling */
-.custom-option >>> .v-checkbox__input,
-.custom-option /deep/ .v-checkbox__input {
-  color: white !important;
+.custom-checkbox >>> .v-input--selection-controls__ripple {
+  border-color: white !important;
 }
 
-/* Remove outline from radio and checkbox */
 .custom-option >>> .v-input__control,
 .custom-option /deep/ .v-input__control {
-  border: none !important; /* Remove border */
+  border: none !important;
 }
 
 .custom-option >>> .v-input__control:focus,
 .custom-option /deep/ .v-input__control:focus {
-  outline: none !important; /* Remove focus outline */
+  outline: none !important;
 }
 </style>

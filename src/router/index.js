@@ -7,9 +7,12 @@ import LogIn from '../views/LogIn.vue'; // Fix the filename to match your actual
 import Register from '../views/Register.vue';
 import Build from '../views/OdabirDijelova.vue';
 import { auth } from '@/router/firebase'; // Import Firebase authentication correctly
-import Profile from '../views/Profile.vue';
+import checkout from '../views/checkout.vue';
 
 Vue.use(VueRouter);
+
+
+
 
 const routes = [
   {
@@ -18,10 +21,11 @@ const routes = [
     component: HomeView,
   },
   {
-    path: '/about',
-    name: 'about',
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue'),
+    path: '/checkout',
+    name: 'checkout',
+    component: checkout,
   },
+ 
   {
     path: '/login',
     name: 'login',
@@ -36,11 +40,6 @@ const routes = [
     path: '/build',
     name: 'build',
     component: Build,
-  },
-  {
-    path: '/profile',
-    name: 'profile',
-    component: Profile,
   },
   
 ];

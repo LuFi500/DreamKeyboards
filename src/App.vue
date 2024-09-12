@@ -37,16 +37,18 @@
           Custom Keyboard
         </v-btn>
 
-        <v-btn :disabled="this.$route.name === 'login'" class="nav-btn" text @click="goToLogin">
+        <!-- Disable Login/Register if user is logged in -->
+        <v-btn v-if="!isLoggedIn" :disabled="this.$route.name === 'login'" class="nav-btn" text @click="goToLogin">
           Login
         </v-btn>
 
-        <v-btn :disabled="this.$route.name === 'register'" class="nav-btn" text @click="goToRegister">
+        <v-btn v-if="!isLoggedIn" :disabled="this.$route.name === 'register'" class="nav-btn" text @click="goToRegister">
           Register
         </v-btn>
 
-        <v-btn :disabled="this.$route.name === 'profile'" class="nav-btn" text @click="goToProfile">
-          Account Settings
+        <!-- Sign Out button - visible only when logged in -->
+        <v-btn v-if="isLoggedIn" class="nav-btn" text @click="signOutUser">
+          Sign Out
         </v-btn>
       </div>
     </v-app-bar>
@@ -58,25 +60,58 @@
 </template>
 
 <script>
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from '@/router/firebase'; // Import your Firebase auth instance
+
 export default {
   name: 'App',
+  data() {
+    return {
+      isLoggedIn: false, // Track login status
+    };
+  },
   methods: {
     goToHome() {
-      this.$router.push('/');
+      if (this.$route.name !== 'home') {
+        this.$router.push('/');
+      }
     },
     goToBuild() {
-      this.$router.push('/build');
+      if (this.$route.name !== 'build') {
+        this.$router.push('/build');
+      }
     },
     goToLogin() {
-      this.$router.push('/login');
+      if (this.$route.name !== 'login') {
+        this.$router.push('/login');
+      }
     },
     goToRegister() {
-      this.$router.push('/register');
+      if (this.$route.name !== 'register') {
+        this.$router.push('/register');
+      }
     },
-    goToProfile() {
-      this.$router.push('/profile');
+    async signOutUser() {
+      try {
+        await signOut(auth); // Sign the user out
+        this.isLoggedIn = false; // Update login state
+
+        // Only redirect to home if not already on home
+        if (this.$route.name !== 'home') {
+          this.$router.push('/');
+        }
+      } catch (error) {
+        console.error('Error signing out:', error);
+        alert('Failed to sign out.');
+      }
     }
-  }
+  },
+  mounted() {
+    // Check the authentication state when the component is mounted
+    onAuthStateChanged(auth, (user) => {
+      this.isLoggedIn = !!user; // Update login status based on user authentication
+    });
+  },
 };
 </script>
 
