@@ -86,33 +86,55 @@
 
 <script>
 import * as THREE from 'three';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'; 
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'; 
-import { auth } from '@/router/firebase'; 
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'; // Import OBJLoader
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'; // Import OrbitControls
+import { auth } from '@/router/firebase'; // Import Firebase authentication
 
 export default {
   name: 'ThreeScene',
   data() {
     return {
-      radio1: '1', 
-      radio2: 'aluminum', 
-      radioKeycap: 'peachRed', 
-      radioSwitches: 'matchaLate', 
-      object: null,
-      currentPlayingAudio: null 
+      radio1: '1', // Default to 60% layout
+      radio2: 'aluminum', // Default to Brushed Aluminum for case material
+      radioKeycap: 'peachRed', // Track keycap color, default Peach Red
+      radioSwitches: 'matchaLate', // Default to Matcha Late switch
+      object: null, // Reference to the 3D object
+      currentPlayingAudio: null, // Track the currently playing audio
+      layoutPrices: { 1: 40, 2: 45 }, // Prices for layouts
+      caseMaterialPrices: { white: 20, black: 20, aluminum: 30, brass: 40 }, // Prices for case materials
+      keycapPrice: 20, // Keycap price
+      switchPrices: { matchaLate: 40, boba: 50, akkoBlack: 30, akkoYellow: 30 }, // Prices for switches
     };
+  },
+  watch: {
+    // Watch for changes in case material or keycap color
+    radio2(newVal) {
+      this.updateTexture(newVal, this.radioKeycap);
+    },
+    radioKeycap(newVal) {
+      this.updateTexture(this.radio2, newVal);
+    }
   },
   methods: {
     playSound(switchType) {
       const audio = this.$refs[switchType];
       if (audio) {
+        // Stop the currently playing audio (if any)
         if (this.currentPlayingAudio && this.currentPlayingAudio !== audio) {
           this.currentPlayingAudio.pause();
-          this.currentPlayingAudio.currentTime = 0; 
+          this.currentPlayingAudio.currentTime = 0; // Reset audio to the start
         }
         this.currentPlayingAudio = audio;
         audio.play();
       }
+    },
+    calculateTotal() {
+      const layoutPrice = this.layoutPrices[this.radio1];
+      const caseMaterialPrice = this.caseMaterialPrices[this.radio2];
+      const keycapPrice = this.keycapPrice;
+      const switchPrice = this.switchPrices[this.radioSwitches];
+
+      return layoutPrice + caseMaterialPrice + keycapPrice + switchPrice;
     },
     initThree() {
       const scene = new THREE.Scene();
@@ -179,6 +201,7 @@ export default {
       const textureLoader = new THREE.TextureLoader();
       let texturePath = '';
 
+      // Determine the texture based on the keycap color and case material
       if (keycap === 'peachRed') {
         texturePath = caseMaterial === 'aluminum' ? '/redAluminum1.png' :
                       caseMaterial === 'white' ? '/redWhite.png' :
@@ -196,20 +219,22 @@ export default {
                       caseMaterial === 'brass' ? '/whiteBrass1.png' : '';
       }
 
+      // If a valid texture path is found, load the texture
       if (texturePath && this.object) {
         textureLoader.load(
           texturePath,
           (texture) => {
+            // Apply the texture to the object
             this.object.traverse((child) => {
               if (child instanceof THREE.Mesh) {
                 child.material.map = texture;
-                child.material.needsUpdate = true;
+                child.material.needsUpdate = true; // Ensure the material is updated
               }
             });
           },
           undefined,
           (error) => {
-            console.error('Error loading texture:', error); 
+            console.error('Error loading texture:', error); // Handle texture load error
           }
         );
       } else {
@@ -217,35 +242,23 @@ export default {
       }
     },
     goToCheckout() {
-      if (!auth.currentUser) {
-        this.$router.push('/login'); 
-        return;
+      const totalAmount = this.calculateTotal();
+      
+      // Check if the user is logged in
+      if (auth.currentUser) {
+        this.$router.push({
+          path: '/checkout',
+          query: {
+            layout: this.radio1,
+            caseMaterial: this.radio2,
+            keycap: this.radioKeycap,
+            switches: this.radioSwitches,
+            total: totalAmount
+          }
+        }); 
+      } else {
+        this.$router.push('/login'); // Redirect to login page if not logged in
       }
-
-      let total = 0;
-      if (this.radio1 === '1') total += 40;
-      else if (this.radio1 === '2') total += 45;
-
-      if (this.radio2 === 'white' || this.radio2 === 'black') total += 20;
-      else if (this.radio2 === 'aluminum') total += 30;
-      else if (this.radio2 === 'brass') total += 40;
-
-      total += 20;
-
-      if (this.radioSwitches === 'matchaLate') total += 40;
-      else if (this.radioSwitches === 'boba') total += 50;
-      else if (this.radioSwitches === 'akkoBlack' || this.radioSwitches === 'akkoYellow') total += 30;
-
-      this.$router.push({
-        path: '/checkout',
-        query: {
-          layout: this.radio1,
-          caseMaterial: this.radio2,
-          keycapColor: this.radioKeycap,
-          switches: this.radioSwitches,
-          totalAmount: total,
-        },
-      });
     }
   },
   mounted() {
@@ -277,6 +290,7 @@ export default {
   border-radius: 50%;
 }
 
+/* Apply the same button style as the login button */
 .proceed-to-checkout-btn {
   background-color: black !important;
   color: white !important;
@@ -289,6 +303,7 @@ export default {
   color: white !important;
 }
 
+/* Drawer and card styling */
 .custom-drawer {
   background-color: black;
   width: 15% !important;
@@ -309,6 +324,7 @@ export default {
   margin-top: 80px;
 }
 
+/* Font styling */
 @import url('https://fonts.cdnfonts.com/css/coolvetica-2');
 
 .custom-label >>> .v-label,

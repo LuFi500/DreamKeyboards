@@ -99,7 +99,7 @@
               :disabled="!valid"
               @click="submitForm"
             >
-              Pay {{ totalAmount }} EUR
+              Pay {{ amount }} EUR
             </v-btn>
           </v-form>
         </v-card-text>
@@ -112,8 +112,8 @@
 export default {
   data() {
     return {
+      // Validation state
       valid: false,
-      totalAmount: this.$route.query.totalAmount || 20, // Retrieve the total amount from route params
 
       // Shipping Details
       shippingName: '',
@@ -128,6 +128,9 @@ export default {
       cardNumber: '',
       expiryDate: '',
       cvc: '',
+
+      // Payment Amount (will be fetched from query)
+      amount: 0,
 
       // Validation rules
       nameRules: [(v) => !!v || 'Name is required'],
@@ -153,10 +156,17 @@ export default {
       ],
     };
   },
+  mounted() {
+    // Fetch the amount from the query parameters passed from the previous page
+    if (this.$route.query.total) {
+      this.amount = parseFloat(this.$route.query.total);
+    }
+  },
   methods: {
     submitForm() {
+      // Handle the form submission if valid
       if (this.$refs.form.validate()) {
-        alert(`Payment of ${this.totalAmount} EUR processed!`);
+        alert(`Form submitted! Total: ${this.amount} EUR`);
       } else {
         alert('Please fill out all fields correctly.');
       }
