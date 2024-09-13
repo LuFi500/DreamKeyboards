@@ -109,6 +109,11 @@
 </template>
 
 <script>
+// Import Firebase services in a modular way
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore'; // Import methods for Firestore
+
 export default {
   data() {
     return {
@@ -163,10 +168,46 @@ export default {
     }
   },
   methods: {
-    submitForm() {
-      // Handle the form submission if valid
+    async submitForm() {
       if (this.$refs.form.validate()) {
-        alert(`Form submitted! Total: ${this.amount} EUR`);
+        try {
+          // Initialize Firebase services
+          const auth = getAuth();
+          const db = getFirestore();
+
+          // Get the current authenticated user's email from Firebase Auth
+          const user = auth.currentUser;
+
+          if (user) {
+            const userEmail = user.email;
+
+            // Prepare the data to be saved
+            const shippingData = {
+              email: userEmail,
+              shippingName: this.shippingName,
+              address: this.address,
+              city: this.city,
+              state: this.state,
+              zipCode: this.zipCode,
+              country: this.country,
+              amount: this.amount, // Payment amount
+              date: new Date().toISOString(), // Add a timestamp
+            };
+
+            // Save shipping data to Firestore under the "orders" collection
+            await setDoc(doc(db, 'orders', userEmail), shippingData);
+
+            alert(`Form submitted! Shipping data saved. Total: ${this.amount} EUR`);
+            
+            // You can redirect or take further action after saving the data
+          } else {
+            alert('User is not authenticated. Please log in.');
+            this.$router.push('/login'); // Redirect to login if user isn't authenticated
+          }
+        } catch (error) {
+          console.error("Error saving shipping data: ", error);
+          alert('There was an issue saving your shipping data. Please try again.');
+        }
       } else {
         alert('Please fill out all fields correctly.');
       }
@@ -174,6 +215,8 @@ export default {
   },
 };
 </script>
+
+
 
 <style scoped>
 .payment-card {

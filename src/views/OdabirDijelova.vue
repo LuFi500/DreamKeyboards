@@ -222,46 +222,73 @@ export default {
       this.radio1 = '2';
     },
     updateTexture(caseMaterial, keycap) {
-      const textureLoader = new THREE.TextureLoader();
-      let texturePath = '';
+  const textureLoader = new THREE.TextureLoader();
+  let texturePath = '';
 
-      if (keycap === 'peachRed') {
-        texturePath = caseMaterial === 'aluminum' ? '/redAluminum1.png' :
-                      caseMaterial === 'white' ? '/redWhite.png' :
-                      caseMaterial === 'black' ? '/redBlack.png' :
-                      caseMaterial === 'brass' ? '/redBrass1.png' : '';
-      } else if (keycap === 'blackPbt') {
-        texturePath = caseMaterial === 'aluminum' ? '/blackAluminum1.png' :
-                      caseMaterial === 'white' ? '/blackWhite.png' :
-                      caseMaterial === 'black' ? '/blackBlack.png' :
-                      caseMaterial === 'brass' ? '/blackBrass1.png' : '';
-      } else if (keycap === 'whitePbt') {
-        texturePath = caseMaterial === 'aluminum' ? '/whiteAluminum1.png' :
-                      caseMaterial === 'white' ? '/whiteWhite.png' :
-                      caseMaterial === 'black' ? '/whiteBlack.png' :
-                      caseMaterial === 'brass' ? '/whiteBrass1.png' : '';
-      }
+  // Determine if we are using the 60% or 67% model
+  const is60Percent = this.radio1 === '1'; // Check if 60% model is selected
 
-      if (texturePath && this.object) {
-        textureLoader.load(
-          texturePath,
-          (texture) => {
-            this.object.traverse((child) => {
-              if (child instanceof THREE.Mesh) {
-                child.material.map = texture;
-                child.material.needsUpdate = true;
-              }
-            });
-          },
-          undefined,
-          (error) => {
-            console.error('Error loading texture:', error);
+  if (is60Percent) {
+    // Logic for 60% model texture paths
+    if (keycap === 'peachRed') {
+      texturePath = caseMaterial === 'aluminum' ? '/60aluminumRed.png' :
+                    caseMaterial === 'white' ? '/60whiteRed.png' :
+                    caseMaterial === 'black' ? '/60blackRed.png' :
+                    caseMaterial === 'brass' ? '/60brassRed.png' : '';
+    } else if (keycap === 'blackPbt') {
+      texturePath = caseMaterial === 'aluminum' ? '/60aluminumBlack.png' :
+                    caseMaterial === 'white' ? '/60whiteBlack.png' :
+                    caseMaterial === 'black' ? '/60blackBlack.png' :
+                    caseMaterial === 'brass' ? '/60brassBlack.png' : '';
+    } else if (keycap === 'whitePbt') {
+      texturePath = caseMaterial === 'aluminum' ? '/60aluminumWhite.png' :
+                    caseMaterial === 'white' ? '/60whiteWhite.png' :
+                    caseMaterial === 'black' ? '/60blackWhite.png' :
+                    caseMaterial === 'brass' ? '/60brassWhite.png' : '';
+    }
+  } else {
+    // Logic for 67% model texture paths
+    if (keycap === 'peachRed') {
+      texturePath = caseMaterial === 'aluminum' ? '/redAluminum1.png' :
+                    caseMaterial === 'white' ? '/redWhite.png' :
+                    caseMaterial === 'black' ? '/redBlack.png' :
+                    caseMaterial === 'brass' ? '/redBrass1.png' : '';
+    } else if (keycap === 'blackPbt') {
+      texturePath = caseMaterial === 'aluminum' ? '/blackAluminum1.png' :
+                    caseMaterial === 'white' ? '/blackWhite.png' :
+                    caseMaterial === 'black' ? '/blackBlack.png' :
+                    caseMaterial === 'brass' ? '/blackBrass1.png' : '';
+    } else if (keycap === 'whitePbt') {
+      texturePath = caseMaterial === 'aluminum' ? '/whiteAluminum1.png' :
+                    caseMaterial === 'white' ? '/whiteWhite.png' :
+                    caseMaterial === 'black' ? '/whiteBlack.png' :
+                    caseMaterial === 'brass' ? '/whiteBrass1.png' : '';
+    }
+  }
+
+  if (texturePath && this.object) {
+    console.log('Loading texture:', texturePath); // Debugging log
+
+    textureLoader.load(
+      texturePath,
+      (texture) => {
+        this.object.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.material.map = texture;
+            child.material.needsUpdate = true;
           }
-        );
-      } else {
-        console.error('Texture path not found or object not loaded');
+        });
+      },
+      undefined,
+      (error) => {
+        console.error('Error loading texture:', error);
       }
-    },
+    );
+  } else {
+    console.error('Texture path not found or object not loaded');
+  }
+},
+
     goToCheckout() {
       const totalAmount = this.calculateTotal();
 
