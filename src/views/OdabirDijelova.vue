@@ -58,13 +58,13 @@
         </v-radio-group>
       </v-card>
 
-      <!-- Checkbox -->
+      <!-- Checkbox for Wireless Connectivity -->
       <v-card class="custom-card">
         <v-checkbox v-model="checkbox1" label="Wireless connectivity" class="custom-option custom-checkbox" style="margin-top: -70px;"></v-checkbox>
       </v-card>
 
       <!-- Checkout Button -->
-      <v-btn 
+      <v-btn
         class="proceed-to-checkout-btn"
         text
         block
@@ -94,20 +94,28 @@ export default {
   name: 'ThreeScene',
   data() {
     return {
-      radio1: '1', // Default to 60% layout
+      radio1: '2', // Default to 67% layout
       radio2: 'aluminum', // Default to Brushed Aluminum for case material
       radioKeycap: 'peachRed', // Track keycap color, default Peach Red
       radioSwitches: 'matchaLate', // Default to Matcha Late switch
+      checkbox1: false, // Wireless connectivity option (default unchecked)
       object: null, // Reference to the 3D object
       currentPlayingAudio: null, // Track the currently playing audio
       layoutPrices: { 1: 40, 2: 45 }, // Prices for layouts
       caseMaterialPrices: { white: 20, black: 20, aluminum: 30, brass: 40 }, // Prices for case materials
       keycapPrice: 20, // Keycap price
       switchPrices: { matchaLate: 40, boba: 50, akkoBlack: 30, akkoYellow: 30 }, // Prices for switches
+      wirelessPrice: 20, // Wireless connectivity price
     };
   },
   watch: {
-    // Watch for changes in case material or keycap color
+    radio1(newVal) {
+      if (newVal === '1') {
+        this.loadKeyboardModel('/60keyboard.obj'); // Load 60% keyboard model
+      } else if (newVal === '2') {
+        this.loadKeyboardModel('/prava.obj'); // Load 67% keyboard model
+      }
+    },
     radio2(newVal) {
       this.updateTexture(newVal, this.radioKeycap);
     },
@@ -119,32 +127,64 @@ export default {
     playSound(switchType) {
       const audio = this.$refs[switchType];
       if (audio) {
-        // Stop the currently playing audio (if any)
         if (this.currentPlayingAudio && this.currentPlayingAudio !== audio) {
           this.currentPlayingAudio.pause();
-          this.currentPlayingAudio.currentTime = 0; // Reset audio to the start
+          this.currentPlayingAudio.currentTime = 0;
         }
         this.currentPlayingAudio = audio;
         audio.play();
       }
+    },
+    loadKeyboardModel(modelPath) {
+      if (this.object) {
+        this.scene.remove(this.object);
+        this.object = null;
+      }
+
+      const objLoader = new OBJLoader();
+      objLoader.load(
+        modelPath,
+        (object) => {
+          if (modelPath === '/60keyboard.obj') {
+            object.scale.set(0.1, 0.1, 0.1); // Scale to match the 67% model
+            object.position.set(-2.3, 1, -1); // Position to match the 67% model
+            object.rotation.x = Math.PI / 2; // Same rotation as the 67% model
+          } else if (modelPath === '/prava.obj') {
+            object.scale.set(3, 3, 3);
+            object.position.set(4.5, -1, 0);
+            object.rotation.x = Math.PI / 2;
+          }
+
+          this.object = object;
+          this.updateTexture(this.radio2, this.radioKeycap); // Update texture
+          this.scene.add(this.object); // Add the object to the scene
+        },
+        (xhr) => {
+          console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
+        },
+        (error) => {
+          console.error('An error happened', error);
+        }
+      );
     },
     calculateTotal() {
       const layoutPrice = this.layoutPrices[this.radio1];
       const caseMaterialPrice = this.caseMaterialPrices[this.radio2];
       const keycapPrice = this.keycapPrice;
       const switchPrice = this.switchPrices[this.radioSwitches];
+      const wirelessPrice = this.checkbox1 ? this.wirelessPrice : 0;
 
-      return layoutPrice + caseMaterialPrice + keycapPrice + switchPrice;
+      return layoutPrice + caseMaterialPrice + keycapPrice + switchPrice + wirelessPrice;
     },
     initThree() {
-      const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x000000);
+      this.scene = new THREE.Scene();
+      this.scene.background = new THREE.Color(0x000000);
 
       const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
       camera.position.set(0, 2, 7.5);
 
       const renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(window.innerWidth * 0.85, window.innerHeight); 
+      renderer.setSize(window.innerWidth * 0.85, window.innerHeight);
       this.$refs.threeContainer.appendChild(renderer.domElement);
 
       const controls = new OrbitControls(camera, renderer.domElement);
@@ -157,36 +197,18 @@ export default {
       controls.minPolarAngle = 0;
 
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-      scene.add(ambientLight);
+      this.scene.add(ambientLight);
 
       const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
       directionalLight.position.set(1, 1, 1).normalize();
-      scene.add(directionalLight);
+      this.scene.add(directionalLight);
 
-      const objLoader = new OBJLoader();
-      objLoader.load(
-        '/prava.obj',
-        (object) => {
-          object.scale.set(3, 3, 3);
-          object.position.set(4.5, -1, 0);
-          object.rotation.x = Math.PI / 2;
-
-          this.object = object;
-          this.updateTexture(this.radio2, this.radioKeycap);
-          scene.add(this.object);
-        },
-        (xhr) => {
-          console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`);
-        },
-        (error) => {
-          console.error('An error happened', error);
-        }
-      );
+      this.loadKeyboardModel('/prava.obj'); // Default model
 
       const animate = () => {
         requestAnimationFrame(animate);
         controls.update();
-        renderer.render(scene, camera);
+        renderer.render(this.scene, camera);
       };
 
       animate();
@@ -196,12 +218,13 @@ export default {
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth * 0.85, window.innerHeight);
       });
+
+      this.radio1 = '2';
     },
     updateTexture(caseMaterial, keycap) {
       const textureLoader = new THREE.TextureLoader();
       let texturePath = '';
 
-      // Determine the texture based on the keycap color and case material
       if (keycap === 'peachRed') {
         texturePath = caseMaterial === 'aluminum' ? '/redAluminum1.png' :
                       caseMaterial === 'white' ? '/redWhite.png' :
@@ -219,22 +242,20 @@ export default {
                       caseMaterial === 'brass' ? '/whiteBrass1.png' : '';
       }
 
-      // If a valid texture path is found, load the texture
       if (texturePath && this.object) {
         textureLoader.load(
           texturePath,
           (texture) => {
-            // Apply the texture to the object
             this.object.traverse((child) => {
               if (child instanceof THREE.Mesh) {
                 child.material.map = texture;
-                child.material.needsUpdate = true; // Ensure the material is updated
+                child.material.needsUpdate = true;
               }
             });
           },
           undefined,
           (error) => {
-            console.error('Error loading texture:', error); // Handle texture load error
+            console.error('Error loading texture:', error);
           }
         );
       } else {
@@ -243,8 +264,7 @@ export default {
     },
     goToCheckout() {
       const totalAmount = this.calculateTotal();
-      
-      // Check if the user is logged in
+
       if (auth.currentUser) {
         this.$router.push({
           path: '/checkout',
@@ -253,11 +273,12 @@ export default {
             caseMaterial: this.radio2,
             keycap: this.radioKeycap,
             switches: this.radioSwitches,
+            wireless: this.checkbox1,
             total: totalAmount
           }
-        }); 
+        });
       } else {
-        this.$router.push('/login'); // Redirect to login page if not logged in
+        this.$router.push('/login');
       }
     }
   },
