@@ -137,6 +137,13 @@ export default {
       // Payment Amount (will be fetched from query)
       amount: 0,
 
+      // Order Info (add fields to track order details)
+      layout: '',
+      caseMaterial: '',
+      keycapColor: '',
+      switches: '',
+      wireless: false, // Assuming wireless is a boolean option
+
       // Validation rules
       nameRules: [(v) => !!v || 'Name is required'],
       addressRules: [(v) => !!v || 'Address is required'],
@@ -162,9 +169,14 @@ export default {
     };
   },
   mounted() {
-    // Fetch the amount from the query parameters passed from the previous page
+    // Fetch the amount and order details from the query parameters passed from the previous page
     if (this.$route.query.total) {
       this.amount = parseFloat(this.$route.query.total);
+      this.layout = this.$route.query.layout || ''; // Fetch layout choice
+      this.caseMaterial = this.$route.query.caseMaterial || ''; // Fetch case material
+      this.keycapColor = this.$route.query.keycap || ''; // Fetch keycap color
+      this.switches = this.$route.query.switches || ''; // Fetch switches
+      this.wireless = this.$route.query.wireless === 'true'; // Fetch wireless option (convert to boolean)
     }
   },
   methods: {
@@ -181,23 +193,32 @@ export default {
           if (user) {
             const userEmail = user.email;
 
-            // Prepare the data to be saved
-            const shippingData = {
+            // Prepare the data to be saved (shipping data + order data)
+            const orderData = {
               email: userEmail,
-              shippingName: this.shippingName,
-              address: this.address,
-              city: this.city,
-              state: this.state,
-              zipCode: this.zipCode,
-              country: this.country,
-              amount: this.amount, // Payment amount
+              shippingDetails: {
+                shippingName: this.shippingName,
+                address: this.address,
+                city: this.city,
+                state: this.state,
+                zipCode: this.zipCode,
+                country: this.country,
+              },
+              orderDetails: {
+                layout: this.layout,
+                caseMaterial: this.caseMaterial,
+                keycapColor: this.keycapColor,
+                switches: this.switches,
+                wireless: this.wireless,
+                amount: this.amount, // Payment amount
+              },
               date: new Date().toISOString(), // Add a timestamp
             };
 
-            // Save shipping data to Firestore under the "orders" collection
-            await setDoc(doc(db, 'orders', userEmail), shippingData);
+            // Save order data to Firestore under the "orders" collection
+            await setDoc(doc(db, 'orders', userEmail), orderData);
 
-            alert(`Form submitted! Shipping data saved. Total: ${this.amount} EUR`);
+            alert(`Order submitted! Shipping and order data saved. Total: ${this.amount} EUR`);
             
             // You can redirect or take further action after saving the data
           } else {
@@ -205,8 +226,8 @@ export default {
             this.$router.push('/login'); // Redirect to login if user isn't authenticated
           }
         } catch (error) {
-          console.error("Error saving shipping data: ", error);
-          alert('There was an issue saving your shipping data. Please try again.');
+          console.error("Error saving order data: ", error);
+          alert('There was an issue saving your order data. Please try again.');
         }
       } else {
         alert('Please fill out all fields correctly.');
@@ -215,6 +236,7 @@ export default {
   },
 };
 </script>
+
 
 
 
